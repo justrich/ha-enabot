@@ -39,9 +39,12 @@ RUN (apt-get update \
 
 # mediamtx (RTSP server). Downloaded from GitHub; make it non-fatal so a GitHub
 # outage/rate-limit can't fail the whole image rebuild (video is off by default anyway).
+# TARGETARCH is set by buildx (amd64 or arm64); it picks the matching mediamtx asset.
 ARG MEDIAMTX_VERSION=1.9.3
-RUN curl -fsSL --retry 5 --retry-delay 3 \
-      "https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_amd64.tar.gz" \
+ARG TARGETARCH
+RUN case "${TARGETARCH:-amd64}" in arm64) MTX_ARCH=linux_arm64v8 ;; *) MTX_ARCH=linux_amd64 ;; esac \
+    && curl -fsSL --retry 5 --retry-delay 3 \
+      "https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_${MTX_ARCH}.tar.gz" \
       | tar xz -C /usr/local/bin mediamtx \
     || echo "WARN: mediamtx download failed — video will be unavailable"
 
